@@ -2,12 +2,18 @@ import time
 
 
 def clock(func):
-    def clocked(*args):
+    def clocked(*args, **kwargs):
         start = time.time()
-        result = func(*args)
+        result = func(*args, **kwargs)
         elapsed = time.time() - start
         name = func.__name__
-        arg_str = ', '.join(repr(arg) for arg in args)
+        arg_lst = []
+        if args:
+            arg_lst.append(', '.join(repr(arg) for arg in args))
+        if kwargs:
+            pairs = ['%s=%r' % (k, w) for k, w in sorted(kwargs.items())]
+            arg_lst.append(', '.join(pairs))
+        arg_str = ', '.join(arg_lst)
         print('[%0.8fs] %s(%s) -> %r' % (elapsed, name, arg_str, result))
         return result
     return clocked
