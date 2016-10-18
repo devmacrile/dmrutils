@@ -17,70 +17,15 @@ Credit/author: michael.james.asher@gmail.com, https://github.com/mjasher
 """
 
 import datetime
+from functools import wraps
 import multiprocessing
 import os
-import simplejson as json
 
-from functools import wraps
 import numpy
 import pandas
+import simplejson as json
 
 mutex = multiprocessing.Lock()
-
-
-
-"""
-Custom json encoder allows sevearal data types to be saved as json
-"""
-class DateNumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, numpy.ndarray):
-            return {'type': 'numpy.ndarray', 'data_type': str(obj.dtype), 'data': obj.tolist()}
-        elif isinstance(obj, datetime.datetime):
-            return {'type': 'datetime.datetime', 'data': obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}
-        elif isinstance(obj, datetime.date):
-            return {'type': 'datetime.date', 'data': obj.strftime("%Y-%m-%d")}
-        elif isinstance(obj, datetime.timedelta):
-            return (datetime.datetime.min + obj).date().isoformat()
-        elif isinstance(obj, pandas.DataFrame):
-            try:
-                return obj.to_json()
-            except:
-                return obj.as_matrix().tolist()
-        else:
-            return super(DateNumpyEncoder, self).default(obj)
-
-
-def DateNumpyDecoder(dct):
-    if isinstance(dct, dict) and 'type' in dct and dct['type'] == 'numpy.ndarray':
-        return numpy.array(dct['data']).astype(getattr(numpy, dct['data_type']))
-    elif isinstance(dct, dict) and 'type' in dct and dct['type'] == 'datetime.datetime':
-        return datetime.datetime.strptime(dct['data'], "%Y-%m-%dT%H:%M:%S.%fZ")
-    elif isinstance(dct, dict) and 'type' in dct and dct['type'] == 'datetime.date':
-        return datetime.datetime.strptime(dct['data'], "%Y-%m-%d").date()
-    return dct
-
-
-"""
-Some useful key functions
-"""
-def numpy_key(original_x, *args, **kwargs):
-    x = original_x.copy()
-    x.flags.writeable = False
-    key = str(hash(x.data))
-    return key
-
-def join_key(*args, **kwargs):
-    return str(hash(''.join([json.dumps(a, cls=DateNumpyEncoder, ignore_nan=True) for a in args + tuple(kwargs.values())])))
-
-def concat_key(*args, **kwargs):
-    return '_'.join(str(a) for a in args + tuple(kwargs.values()))
-
-def date_place_key(geom, years):
-    return str(hash(''.join([str(y) for y in years]) + json.dumps(geom)))
-
-def one_key(*args, **kwargs):
-    return "one_key"
 
 
 def money(key_func=join_key, cache_directory=None):
@@ -123,3 +68,56 @@ def money(key_func=join_key, cache_directory=None):
         return f_with_cache
 
     return decorator
+
+
+class DateNumpyEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder.
+    Allows several different data types to be saved as JSON.
+    """
+    def default(self, obj):
+        if isinstance(obj, numpy.ndarray):
+            return {'type': 'numpy.ndarray', 'data_type': str(obj.dtype), 'data': obj.tolist()}
+        elif isinstance(obj, datetime.datetime):
+            return {'type': 'datetime.datetime', 'data': obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}
+        elif isinstance(obj, datetime.date):
+            return {'type': 'datetime.date', 'data': obj.strftime("%Y-%m-%d")}
+        elif isinstance(obj, datetime.timedelta):
+            return (datetime.datetime.min + obj).date().isoformat()
+        elif isinstance(obj, pandas.DataFrame):
+            try:
+                return obj.to_json()
+            except:
+                return obj.as_matrix().tolist()
+        else:
+            return super(DateNumpyEncoder, self).default(obj)
+
+
+def DateNumpyDecoder(dct):
+    if isinstance(dct, dict) and 'type' in dct and dct['type'] == 'numpy.ndarray':
+        return numpy.array(dct['data']).astype(getattr(numpy, dct['data_type']))
+    elif isinstance(dct, dict) and 'type' in dct and dct['type'] == 'datetime.datetime':
+        return datetime.datetime.strptime(dct['data'], "%Y-%m-%dT%H:%M:%S.%fZ")
+    elif isinstance(dct, dict) and 'type' in dct and dct['type'] == 'datetime.date':
+        return datetime.datetime.strptime(dct['data'], "%Y-%m-%d").date()
+    return dct
+
+
+# Some useful key functions
+def numpy_key(original_x, *args, **kwargs):
+    x = original_x.copy()
+    x.flags.writeable = False
+    key = str(hash(x.data))
+    return key
+
+def join_key(*args, **kwargs):
+    return str(hash(''.join([json.dumps(a, cls=DateNumpyEncoder, ignore_nan=True) for a in args + tuple(kwargs.values())])))
+
+def concat_key(*args, **kwargs):
+    return '_'.join(str(a) for a in args + tuple(kwargs.values()))
+
+def date_place_key(geom, years):
+    return str(hash(''.join([str(y) for y in years]) + json.dumps(geom)))
+
+def one_key(*args, **kwargs):
+    return "one_key"
