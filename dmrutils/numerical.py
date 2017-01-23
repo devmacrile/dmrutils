@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 
@@ -39,3 +41,46 @@ def median_polish(array, iterations=25):
         grand_effect += median_col_effects
 
     return (grand_effect, col_effects, row_effects, array)  
+
+
+def rdp(points, epsilon):
+    """
+    Implementation of the Ramer–Douglas–Peucker algorithm for reduce
+    the number of points used to define a curve.
+    https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
+    
+
+    points   -- List of (x, y) tuples
+    epsilon  -- Threshold of perpindicular distance to determine need for endpoint.
+                Will have to vary this based on the application/interpretation of 
+                euclidean distance.
+    """
+    dmax = 0
+    index = 0
+    end = len(points)
+
+    def orthogonal_distance(point, line):
+        """ 
+        Distance from point to line. 
+        https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+        """
+        a, b = line
+        numerator = abs(b[1] - a[1]) * point[0] - (b[0] - a[0]) * point[1] + (b[0] * a[1]) - (b[1] * a[0]))
+        denominator = math.sqrt((b[1] - a[1]) ** 2 + (b[0] - a[0]) ** 2)
+        return float(numerator) / denominator
+
+    for i in range(1, end):
+        d = orthogonal_distance(points[i], (points[0], points[-1]))
+        if d > dmax:
+            index = i
+            dmax = d
+
+    if dmax > epsilon:
+        results_a = rdp(points[:index], epsilon)
+        results_b = rdp(points[index:], epsilon)
+        results = results_a[:-1] + results_b        
+    else:
+        results = [points[0], points[-1]]
+    
+    return results
+
