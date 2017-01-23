@@ -45,10 +45,8 @@ def median_polish(array, iterations=25):
 
 def rdp(points, epsilon):
     """
-    Implementation of the Ramer–Douglas–Peucker algorithm for reduce
+    Implementation of the Ramer-Douglas-Peucker algorithm for reducing
     the number of points used to define a curve.
-    https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
-    
 
     points   -- List of (x, y) tuples
     epsilon  -- Threshold of perpindicular distance to determine need for endpoint.
@@ -62,10 +60,9 @@ def rdp(points, epsilon):
     def orthogonal_distance(point, line):
         """ 
         Distance from point to line. 
-        https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         """
         a, b = line
-        numerator = abs(b[1] - a[1]) * point[0] - (b[0] - a[0]) * point[1] + (b[0] * a[1]) - (b[1] * a[0]))
+        numerator = abs((b[1] - a[1]) * point[0] - (b[0] - a[0]) * point[1] + (b[0] * a[1]) - (b[1] * a[0]))
         denominator = math.sqrt((b[1] - a[1]) ** 2 + (b[0] - a[0]) ** 2)
         return float(numerator) / denominator
 
